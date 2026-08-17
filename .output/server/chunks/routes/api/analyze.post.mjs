@@ -13,7 +13,6 @@ import 'node:crypto';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
-import 'node:module';
 
 const analyze_post = defineEventHandler(async (event) => {
   const body = await readBody(event);

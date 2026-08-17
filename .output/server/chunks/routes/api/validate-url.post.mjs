@@ -13,7 +13,6 @@ import 'node:crypto';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
-import 'node:module';
 
 const validateUrl_post = defineEventHandler(async (event) => {
   var _a;

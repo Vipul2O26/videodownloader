@@ -18,7 +18,6 @@ import 'node:crypto';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
-import 'node:module';
 import 'tailwindcss/colors';
 import 'vue/server-renderer';
 import '../routes/renderer.mjs';

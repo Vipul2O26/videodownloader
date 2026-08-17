@@ -14,7 +14,6 @@ import 'node:crypto';
 import 'node:url';
 import '@iconify/utils';
 import 'consola';
-import 'node:module';
 
 const file_get = defineEventHandler(async (event) => {
   const query = getQuery(event);
