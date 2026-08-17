@@ -12,6 +12,9 @@ declare module "nitropack/types" {
     '/api/media/download': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/media/download.post').default>>>>
     }
+    '/api/media/file': {
+      'get': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/media/file.get').default>>>>
+    }
     '/api/validate-url': {
       'post': Simplify<Serialize<Awaited<ReturnType<typeof import('../../server/api/validate-url.post').default>>>>
     }

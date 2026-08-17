@@ -1,5 +1,6 @@
 import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import path$1, { resolve as resolve$1, dirname as dirname$1, join } from 'node:path';
 import mime from 'mime-types';
+import ytdl from '@distube/ytdl-core';
 import { fileTypeFromBuffer } from 'file-type';
 import { promises, existsSync } from 'node:fs';
 import { v4 } from 'uuid';
@@ -332,7 +333,7 @@ function joinRelativeURL(..._input) {
   }
   return url;
 }
-function isEqual$1(a, b, options = {}) {
+function isEqual(a, b, options = {}) {
   if (!options.trailingSlash) {
     a = withTrailingSlash(a);
     b = withTrailingSlash(b);
@@ -3533,11 +3534,6 @@ const Serializer = /*@__PURE__*/ (function() {
 	};
 	return Serializer;
 })();
-function isEqual(object1, object2) {
-	if (object1 === object2) return true;
-	if (serialize$1(object1) === serialize$1(object2)) return true;
-	return false;
-}
 
 const fastHash = /*@__PURE__*/ (() => globalThis.process?.getBuiltinModule?.("crypto")?.hash)();
 const algorithm = "sha256";
@@ -4484,7 +4480,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "03ccb7b7-4031-42f0-a723-a0dfbb59ecb0",
+    "buildId": "e6c251cd-2d8a-4c04-b0b6-54f2b6d10d47",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4967,219 +4963,226 @@ const assets = {
   "/_fonts/178SDQEgKlkYIwN3m_zkIjcMBXox4CVikxxdM0ZM8vo-jb38HpZEzI0_yhPLZ-Yy9g2MdhSlJbWEEPtE4J-7mA4.woff2": {
     "type": "font/woff2",
     "etag": "\"2998-n4Ng0qtMjpor9BjKimp6sLXh5BI\"",
-    "mtime": "2026-08-17T17:30:19.032Z",
+    "mtime": "2026-08-17T17:56:12.853Z",
     "size": 10648,
     "path": "../public/_fonts/178SDQEgKlkYIwN3m_zkIjcMBXox4CVikxxdM0ZM8vo-jb38HpZEzI0_yhPLZ-Yy9g2MdhSlJbWEEPtE4J-7mA4.woff2"
   },
   "/_fonts/5M2MKUFWnEpuT8NeCYosby4H1wQsStpPWE7MBNFFD6Q-6gJALEDS7yNhRMCqenJPe8GZSicXSdryDX23b39FgW8.woff2": {
     "type": "font/woff2",
     "etag": "\"4e30-CJVl1taa8AaNO619z7s06dRAxFQ\"",
-    "mtime": "2026-08-17T17:30:19.032Z",
+    "mtime": "2026-08-17T17:56:12.853Z",
     "size": 20016,
     "path": "../public/_fonts/5M2MKUFWnEpuT8NeCYosby4H1wQsStpPWE7MBNFFD6Q-6gJALEDS7yNhRMCqenJPe8GZSicXSdryDX23b39FgW8.woff2"
   },
   "/_fonts/AIcocMSXl6nLNQXbUptJf69FjdmzotJy-Fioo4iy220-SB6HQ5Gm3Vcgx3qj0cg_Wze4ux2YBnw264Bp9JBOtqc.woff2": {
     "type": "font/woff2",
     "etag": "\"2f04-ntsyPpeWIrXM3hz1Nt0hG95RmwU\"",
-    "mtime": "2026-08-17T17:30:19.032Z",
+    "mtime": "2026-08-17T17:56:12.854Z",
     "size": 12036,
     "path": "../public/_fonts/AIcocMSXl6nLNQXbUptJf69FjdmzotJy-Fioo4iy220-SB6HQ5Gm3Vcgx3qj0cg_Wze4ux2YBnw264Bp9JBOtqc.woff2"
+  },
+  "/_fonts/Bo1YvO13V3DbVwJcDOML4fx8wU8CkuqdVBmtg4dB56s-_tXBJUSBLGtGY0T2mljhSbG78q0wL0Pbgza1LnD1mD0.woff": {
+    "type": "font/woff",
+    "etag": "\"230cc-Fs5EUegllS1F44cwOHgYxFTHJtM\"",
+    "mtime": "2026-08-17T17:56:12.854Z",
+    "size": 143564,
+    "path": "../public/_fonts/Bo1YvO13V3DbVwJcDOML4fx8wU8CkuqdVBmtg4dB56s-_tXBJUSBLGtGY0T2mljhSbG78q0wL0Pbgza1LnD1mD0.woff"
+  },
+  "/_fonts/CFNPQVcnBImzX0EtDNVhm6rxBn1xmGUJ07BRlOI64c-AuN8M25eo79PWJa2sA8bcOzJYOX3pV7Xznm4ZDHm7L4.woff2": {
+    "type": "font/woff2",
+    "etag": "\"6afc-065UyE/loH4v/KPT2cqQjWbu2Yc\"",
+    "mtime": "2026-08-17T17:56:12.854Z",
+    "size": 27388,
+    "path": "../public/_fonts/CFNPQVcnBImzX0EtDNVhm6rxBn1xmGUJ07BRlOI64c-AuN8M25eo79PWJa2sA8bcOzJYOX3pV7Xznm4ZDHm7L4.woff2"
   },
   "/_fonts/ERDypvkxXdChOV_B5u1ryQXmRbXDEMV5qjyhhW3xYeU-k61Y5mwieeHUzISWavQeKX6iyBBLnhRtxyom_DNxZzo.woff2": {
     "type": "font/woff2",
     "etag": "\"4a64-m06OCqyGws0mpyGBBfmbbVtFPSU\"",
-    "mtime": "2026-08-17T17:30:19.033Z",
+    "mtime": "2026-08-17T17:56:12.854Z",
     "size": 19044,
     "path": "../public/_fonts/ERDypvkxXdChOV_B5u1ryQXmRbXDEMV5qjyhhW3xYeU-k61Y5mwieeHUzISWavQeKX6iyBBLnhRtxyom_DNxZzo.woff2"
   },
   "/_fonts/HgJel4iAS5mDVqJaDUYKmxaMJg4zKHTGmyD1FQkOsTM-2hVuuQIZ4GSGMgNv6dvlqz7cfD6lr7xLohUph7OCgFg.woff2": {
     "type": "font/woff2",
     "etag": "\"bd30-HcBE9IJP1a9r/tZ/7ki+cPoGnz8\"",
-    "mtime": "2026-08-17T17:30:19.033Z",
+    "mtime": "2026-08-17T17:56:12.858Z",
     "size": 48432,
     "path": "../public/_fonts/HgJel4iAS5mDVqJaDUYKmxaMJg4zKHTGmyD1FQkOsTM-2hVuuQIZ4GSGMgNv6dvlqz7cfD6lr7xLohUph7OCgFg.woff2"
   },
   "/_fonts/IbbswF-_Vv86nKnoVzycaklhFj9_jJEnyisnqN6LmPo-m6Ab3Re0t4DnCyR1DwEHCEvwfevkTcA65xJQ4ZPG4co.woff2": {
     "type": "font/woff2",
     "etag": "\"166bc-r/t3z77mQ+DDMQr+Pkm5yR2/0FE\"",
-    "mtime": "2026-08-17T17:30:19.033Z",
+    "mtime": "2026-08-17T17:56:12.855Z",
     "size": 91836,
     "path": "../public/_fonts/IbbswF-_Vv86nKnoVzycaklhFj9_jJEnyisnqN6LmPo-m6Ab3Re0t4DnCyR1DwEHCEvwfevkTcA65xJQ4ZPG4co.woff2"
-  },
-  "/_fonts/CFNPQVcnBImzX0EtDNVhm6rxBn1xmGUJ07BRlOI64c-AuN8M25eo79PWJa2sA8bcOzJYOX3pV7Xznm4ZDHm7L4.woff2": {
-    "type": "font/woff2",
-    "etag": "\"6afc-065UyE/loH4v/KPT2cqQjWbu2Yc\"",
-    "mtime": "2026-08-17T17:30:19.033Z",
-    "size": 27388,
-    "path": "../public/_fonts/CFNPQVcnBImzX0EtDNVhm6rxBn1xmGUJ07BRlOI64c-AuN8M25eo79PWJa2sA8bcOzJYOX3pV7Xznm4ZDHm7L4.woff2"
   },
   "/_fonts/Jtqhy44WKYEjGWTSusP5YJfJv7Wf74QqgkBOI9u_77s-Rl_Bht5SvmaotE20bkavBEAJEEGEa0hcz3d_8yOeXmw.woff": {
     "type": "font/woff",
     "etag": "\"24224-i8nyHZCghVE6re0lgyIqtNYVsUU\"",
-    "mtime": "2026-08-17T17:30:19.037Z",
+    "mtime": "2026-08-17T17:56:12.856Z",
     "size": 148004,
     "path": "../public/_fonts/Jtqhy44WKYEjGWTSusP5YJfJv7Wf74QqgkBOI9u_77s-Rl_Bht5SvmaotE20bkavBEAJEEGEa0hcz3d_8yOeXmw.woff"
   },
   "/_fonts/Jz2_acfD_oqut-QwcF37YvFRf5BjWGsFyb8HNT_yWCs-16G9G3z7MFIXvLaOHqfBk5LoEVcoAKUaoZTf8EsRj_Q.woff": {
     "type": "font/woff",
     "etag": "\"252bc-IdywfwmXObctoP5MwOr4+ENEQ5M\"",
-    "mtime": "2026-08-17T17:30:19.034Z",
+    "mtime": "2026-08-17T17:56:12.858Z",
     "size": 152252,
     "path": "../public/_fonts/Jz2_acfD_oqut-QwcF37YvFRf5BjWGsFyb8HNT_yWCs-16G9G3z7MFIXvLaOHqfBk5LoEVcoAKUaoZTf8EsRj_Q.woff"
   },
   "/_fonts/KCD5gdyGvwD04J2YZVfG5P-c82WM-ESA68SM8qCokq0-VU4O6gA3mknWHXkXUMY7aShByLKqEZOCYay7MuxAVuU.woff2": {
     "type": "font/woff2",
     "etag": "\"c9b4-M34QudaP9GdXqIjZ6Tla/ROWz5M\"",
-    "mtime": "2026-08-17T17:30:19.034Z",
+    "mtime": "2026-08-17T17:56:12.855Z",
     "size": 51636,
     "path": "../public/_fonts/KCD5gdyGvwD04J2YZVfG5P-c82WM-ESA68SM8qCokq0-VU4O6gA3mknWHXkXUMY7aShByLKqEZOCYay7MuxAVuU.woff2"
   },
   "/_fonts/Qen6kKXoOl3R3jgb-RCpynJeEkuDL6QxKNQxFRactqY-cbUcT37MIzmxspnwnOT_NKvWS8Fd4n9eqT4cZAr_cWA.woff": {
     "type": "font/woff",
     "etag": "\"2555c-7khlIPyKtStNhLHpGTWVx6A5bY8\"",
-    "mtime": "2026-08-17T17:30:19.034Z",
+    "mtime": "2026-08-17T17:56:12.855Z",
     "size": 152924,
     "path": "../public/_fonts/Qen6kKXoOl3R3jgb-RCpynJeEkuDL6QxKNQxFRactqY-cbUcT37MIzmxspnwnOT_NKvWS8Fd4n9eqT4cZAr_cWA.woff"
   },
   "/_fonts/RUUN-23UGP8yTJV6xaMhEeTm2TLDCA206NGUBPDCQyk-xkhXnPxF1UcF1sQuTpcjj6vj81p3pox8F65G5ndYOYs.woff": {
     "type": "font/woff",
     "etag": "\"22e5c-Ji+GsSUN2MqlmoLktJt9fTpGQ0k\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.856Z",
     "size": 142940,
     "path": "../public/_fonts/RUUN-23UGP8yTJV6xaMhEeTm2TLDCA206NGUBPDCQyk-xkhXnPxF1UcF1sQuTpcjj6vj81p3pox8F65G5ndYOYs.woff"
   },
   "/_fonts/UzhR3nAaijOxr33OombACPQO7z-6yxLefOdxL2qrdkM-a0beAYA6HgY0fQ5vpHiCL_P_ChfPRJkoN6xel0ZbT_M.woff2": {
     "type": "font/woff2",
     "etag": "\"4938-N3S2eKZrRgCJpY2MefXWBufCQaA\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.856Z",
     "size": 18744,
     "path": "../public/_fonts/UzhR3nAaijOxr33OombACPQO7z-6yxLefOdxL2qrdkM-a0beAYA6HgY0fQ5vpHiCL_P_ChfPRJkoN6xel0ZbT_M.woff2"
   },
   "/_fonts/ZHaz3DhCHNWhsElqYfuM71rfBBDgjuU2sd34vaYJwQg-71NZaZSGjxzAGjCMnCc2zS5rS_EGA0xHKPGCggWuXik.woff": {
     "type": "font/woff",
     "etag": "\"22114-IIKRYhC5hULI9xvIbbQwo/zu/gk\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.857Z",
     "size": 139540,
     "path": "../public/_fonts/ZHaz3DhCHNWhsElqYfuM71rfBBDgjuU2sd34vaYJwQg-71NZaZSGjxzAGjCMnCc2zS5rS_EGA0xHKPGCggWuXik.woff"
   },
   "/_fonts/ez4lVSyRqqCUuKH6dN6OoXAdOd1Tig7Lx0sxWNqSyss-FAPjTJvN2otlgkrcoQlc70SE03hjkWoDwAr5QrM_lH4.woff2": {
     "type": "font/woff2",
     "etag": "\"2828-F3GDdFn8yIqL/ZsbzNDCHlQrmMo\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.857Z",
     "size": 10280,
     "path": "../public/_fonts/ez4lVSyRqqCUuKH6dN6OoXAdOd1Tig7Lx0sxWNqSyss-FAPjTJvN2otlgkrcoQlc70SE03hjkWoDwAr5QrM_lH4.woff2"
   },
   "/_fonts/ffbDlYcgTaEOnso-ipkZyoviU7H_qu1vdDKLzdRMiGk-z0cz_vXe9FMQpUr1XPibpV3rF_SBN35ESvr3xAG3hgg.woff2": {
     "type": "font/woff2",
     "etag": "\"2c08-0jmpRV2Mkkir4F2SgNetftT+X2g\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.857Z",
     "size": 11272,
     "path": "../public/_fonts/ffbDlYcgTaEOnso-ipkZyoviU7H_qu1vdDKLzdRMiGk-z0cz_vXe9FMQpUr1XPibpV3rF_SBN35ESvr3xAG3hgg.woff2"
   },
   "/_fonts/gKY12I0xR6XlZGrxmgE6Ajg7dolnFcwq2-CgW16emfc-X7w6QUwy0G27X1sBOv3U2zKeLNfjYiwTzwCsHp_sD_I.woff2": {
     "type": "font/woff2",
     "etag": "\"5084-wzEMqHmSXhs0bT3Vh/Szi16YDd8\"",
-    "mtime": "2026-08-17T17:30:19.035Z",
+    "mtime": "2026-08-17T17:56:12.857Z",
     "size": 20612,
     "path": "../public/_fonts/gKY12I0xR6XlZGrxmgE6Ajg7dolnFcwq2-CgW16emfc-X7w6QUwy0G27X1sBOv3U2zKeLNfjYiwTzwCsHp_sD_I.woff2"
   },
   "/_fonts/ppPcyD9u3AAh0XAJnxi7vJUfx53qxORStdLloFeDOew-yg9zZpRrZit_sUTwUa9zS6y6ilu4ghjvIE_Mw6kE5D8.woff": {
     "type": "font/woff",
     "etag": "\"232b4-17YfzwWAISawMutSeCHnlLAz71E\"",
-    "mtime": "2026-08-17T17:30:19.036Z",
+    "mtime": "2026-08-17T17:56:12.857Z",
     "size": 144052,
     "path": "../public/_fonts/ppPcyD9u3AAh0XAJnxi7vJUfx53qxORStdLloFeDOew-yg9zZpRrZit_sUTwUa9zS6y6ilu4ghjvIE_Mw6kE5D8.woff"
   },
   "/_fonts/uTGoASwNPxQoErpawYG8LxDAzXETHa_cYibPEm5a0js-FzPMEutgGN9BPdA0CHFmlTc89SYCuPok1t3usEo_5Vw.woff": {
     "type": "font/woff",
     "etag": "\"2509c-hFar6C6RzEQkQI6Dc/8ItMjAqCk\"",
-    "mtime": "2026-08-17T17:30:19.036Z",
+    "mtime": "2026-08-17T17:56:12.859Z",
     "size": 151708,
     "path": "../public/_fonts/uTGoASwNPxQoErpawYG8LxDAzXETHa_cYibPEm5a0js-FzPMEutgGN9BPdA0CHFmlTc89SYCuPok1t3usEo_5Vw.woff"
   },
   "/_fonts/zkQRrBN3g9v_dVJWVkYryI2HWN4gfl77yu_FVFWNDYY-dCKEZ5lgZTVD30ATELD5lKDbBeBCP_ph7B4YtZQnSns.woff2": {
     "type": "font/woff2",
     "etag": "\"14d18-Uh4k0XQeDHQ4ioQoYVD4qScmVZc\"",
-    "mtime": "2026-08-17T17:30:19.036Z",
+    "mtime": "2026-08-17T17:56:12.858Z",
     "size": 85272,
     "path": "../public/_fonts/zkQRrBN3g9v_dVJWVkYryI2HWN4gfl77yu_FVFWNDYY-dCKEZ5lgZTVD30ATELD5lKDbBeBCP_ph7B4YtZQnSns.woff2"
   },
   "/_fonts/zp_5eX_kcCb1NC9W_nqDxOyw80DU-fOCfH6vtlxk4Z8-noxSJKtVKEVnythGOQu3KozvszjDOTsJmBloptS0j1U.woff2": {
     "type": "font/woff2",
     "etag": "\"64f4-tK7ixsAzSz1n1+rZ0d41uh7QBHY\"",
-    "mtime": "2026-08-17T17:30:19.036Z",
+    "mtime": "2026-08-17T17:56:12.858Z",
     "size": 25844,
     "path": "../public/_fonts/zp_5eX_kcCb1NC9W_nqDxOyw80DU-fOCfH6vtlxk4Z8-noxSJKtVKEVnythGOQu3KozvszjDOTsJmBloptS0j1U.woff2"
   },
-  "/_nuxt/BXUejR0o.js": {
+  "/_nuxt/CRLLoEJe.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"44523-PWFAl3gtV2tGlN0SMROheKUqpWI\"",
-    "mtime": "2026-08-17T17:30:19.043Z",
-    "size": 279843,
-    "path": "../public/_nuxt/BXUejR0o.js"
+    "etag": "\"2674-g6AU2JTAbOXGebvQtArBeJAsbEM\"",
+    "mtime": "2026-08-17T17:56:12.864Z",
+    "size": 9844,
+    "path": "../public/_nuxt/CRLLoEJe.js"
   },
-  "/_nuxt/DZUThe9a.js": {
+  "/_nuxt/Dd7gWBGh.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"e97-UqkkQuQWio64rr+84FmH+kcP91E\"",
-    "mtime": "2026-08-17T17:30:19.043Z",
-    "size": 3735,
-    "path": "../public/_nuxt/DZUThe9a.js"
+    "etag": "\"2c701-wh9SKQvg+wBCWMo0IYQyilEJEXE\"",
+    "mtime": "2026-08-17T17:56:12.865Z",
+    "size": 182017,
+    "path": "../public/_nuxt/Dd7gWBGh.js"
   },
-  "/_nuxt/BHemKWZZ.js": {
+  "/_nuxt/DW3m5XxN.js": {
     "type": "text/javascript; charset=utf-8",
-    "etag": "\"d45-KaRrkBesdKi8/qsHvb2fEfLOw1k\"",
-    "mtime": "2026-08-17T17:30:19.044Z",
+    "etag": "\"1e19-GU3ofLhHKgn68MwBdRWBBjB5L+U\"",
+    "mtime": "2026-08-17T17:56:12.865Z",
+    "size": 7705,
+    "path": "../public/_nuxt/DW3m5XxN.js"
+  },
+  "/_nuxt/DviGuQ--.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"d45-qvIwv56wG4N7Xka3sPwhCkEoEiY\"",
+    "mtime": "2026-08-17T17:56:12.865Z",
     "size": 3397,
-    "path": "../public/_nuxt/BHemKWZZ.js"
-  },
-  "/_fonts/Bo1YvO13V3DbVwJcDOML4fx8wU8CkuqdVBmtg4dB56s-_tXBJUSBLGtGY0T2mljhSbG78q0wL0Pbgza1LnD1mD0.woff": {
-    "type": "font/woff",
-    "etag": "\"230cc-Fs5EUegllS1F44cwOHgYxFTHJtM\"",
-    "mtime": "2026-08-17T17:30:19.032Z",
-    "size": 143564,
-    "path": "../public/_fonts/Bo1YvO13V3DbVwJcDOML4fx8wU8CkuqdVBmtg4dB56s-_tXBJUSBLGtGY0T2mljhSbG78q0wL0Pbgza1LnD1mD0.woff"
-  },
-  "/_nuxt/DlAUqK2U.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"5b-eFCz/UrraTh721pgAl0VxBNR1es\"",
-    "mtime": "2026-08-17T17:30:19.043Z",
-    "size": 91,
-    "path": "../public/_nuxt/DlAUqK2U.js"
-  },
-  "/_nuxt/error-500.I1Dtv2V5.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"75a-vEGyJqldBVJrnMfcLsrGaHcxYl0\"",
-    "mtime": "2026-08-17T17:30:19.044Z",
-    "size": 1882,
-    "path": "../public/_nuxt/error-500.I1Dtv2V5.css"
+    "path": "../public/_nuxt/DviGuQ--.js"
   },
   "/_nuxt/error-404.DL_4WIao.css": {
     "type": "text/css; charset=utf-8",
     "etag": "\"dca-KnjyV0UbpsrliiJzZx69defY74k\"",
-    "mtime": "2026-08-17T17:30:19.043Z",
+    "mtime": "2026-08-17T17:56:12.866Z",
     "size": 3530,
     "path": "../public/_nuxt/error-404.DL_4WIao.css"
   },
+  "/_nuxt/error-500.I1Dtv2V5.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"75a-vEGyJqldBVJrnMfcLsrGaHcxYl0\"",
+    "mtime": "2026-08-17T17:56:12.865Z",
+    "size": 1882,
+    "path": "../public/_nuxt/error-500.I1Dtv2V5.css"
+  },
   "/_nuxt/builds/latest.json": {
     "type": "application/json",
-    "etag": "\"47-aNgqlb/vgbx5cWNfFm0tYZKp0+s\"",
-    "mtime": "2026-08-17T17:30:19.023Z",
+    "etag": "\"47-hdLfmQqR38/qESJcmhJf2LDwr9M\"",
+    "mtime": "2026-08-17T17:56:12.844Z",
     "size": 71,
     "path": "../public/_nuxt/builds/latest.json"
   },
-  "/_nuxt/builds/meta/03ccb7b7-4031-42f0-a723-a0dfbb59ecb0.json": {
-    "type": "application/json",
-    "etag": "\"58-K8E4bmXRc5xOV1XkyhAWeGzjseE\"",
-    "mtime": "2026-08-17T17:30:19.018Z",
-    "size": 88,
-    "path": "../public/_nuxt/builds/meta/03ccb7b7-4031-42f0-a723-a0dfbb59ecb0.json"
-  },
   "/_nuxt/builds/meta/dev.json": {
     "type": "application/json",
-    "etag": "\"37-98t+2DLjf4iooXl6/owmsUhVJVk\"",
-    "mtime": "2026-08-17T17:30:19.018Z",
+    "etag": "\"37-DUtb/0IifXOxcKzEpJUkBymipvc\"",
+    "mtime": "2026-08-17T17:56:12.839Z",
     "size": 55,
     "path": "../public/_nuxt/builds/meta/dev.json"
+  },
+  "/_nuxt/builds/meta/e6c251cd-2d8a-4c04-b0b6-54f2b6d10d47.json": {
+    "type": "application/json",
+    "etag": "\"58-IghEVfbnOVnz8rS3V3FpJvfCdnM\"",
+    "mtime": "2026-08-17T17:56:12.840Z",
+    "size": 88,
+    "path": "../public/_nuxt/builds/meta/e6c251cd-2d8a-4c04-b0b6-54f2b6d10d47.json"
+  },
+  "/_nuxt/DlAUqK2U.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"5b-eFCz/UrraTh721pgAl0VxBNR1es\"",
+    "mtime": "2026-08-17T17:56:12.865Z",
+    "size": 91,
+    "path": "../public/_nuxt/DlAUqK2U.js"
   }
 };
 
@@ -5642,6 +5645,161 @@ class BackgroundQueue {
 }
 const mediaQueue = new BackgroundQueue();
 
+function escapeHtml(value) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function normalizeMediaUrl(candidate, baseUrl) {
+  const cleaned = candidate.replace(/\\/g, "").replace(/&amp;/g, "&");
+  try {
+    const url = new URL(cleaned, baseUrl);
+    if (["http:", "https:"].includes(url.protocol)) {
+      return url.toString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+function findMediaCandidates(html, baseUrl) {
+  const candidates = /* @__PURE__ */ new Set();
+  const patterns = [
+    /(?:property|name)=["']og:video(?:\s*:url)?["'][^>]*content=["']([^"']+)["']/gi,
+    /(?:property|name)=["']twitter:player:stream["'][^>]*content=["']([^"']+)["']/gi,
+    /(?:property|name)=["']twitter:player["'][^>]*content=["']([^"']+)["']/gi,
+    /<video[^>]+src=["']([^"']+)["'][^>]*>/gi,
+    /<source[^>]+src=["']([^"']+)["'][^>]*>/gi,
+    /(?:src|data-src|data-url)=["']([^"']+\.(?:mp4|webm|m4v|m3u8|mpd)(?:\?[^"']*)?)["']/gi,
+    /"(?:url|src|stream)"\s*:\s*"([^"']+)"/gi
+  ];
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      const normalized = normalizeMediaUrl(match[1], baseUrl);
+      if (normalized) {
+        candidates.add(normalized);
+      }
+    }
+  }
+  return [...candidates];
+}
+function findMetaTitle(html) {
+  const patterns = [
+    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i,
+    /<title[^>]*>([^<]+)<\/title>/i
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match == null ? void 0 : match[1]) {
+      return decodeURIComponent(escapeHtml(match[1]).replace(/&amp;/g, "&").replace(/&quot;/g, '"'));
+    }
+  }
+  return "Remote media asset";
+}
+function looksLikeMediaUrl(url) {
+  return /\.(mp4|m4a|m4v|mp3|webm|ogg|aac|wav|m3u8|mpd)(\?.*)?$/i.test(url);
+}
+async function resolveYouTubeSource(url, preferredFormat) {
+  var _a;
+  const info = await ytdl.getInfo(url);
+  const title = ((_a = info.videoDetails) == null ? void 0 : _a.title) || "YouTube media";
+  const chosenFormat = preferredFormat === "mp3" ? ytdl.chooseFormat(info.formats, { quality: "highestaudio", filter: "audioonly" }) : ytdl.chooseFormat(info.formats, { quality: "highest", filter: "audioandvideo" }) || ytdl.chooseFormat(info.formats, { quality: "highest" });
+  if (!(chosenFormat == null ? void 0 : chosenFormat.url)) {
+    throw new Error("No playable stream could be resolved from this YouTube URL.");
+  }
+  return {
+    resolvedUrl: chosenFormat.url,
+    title,
+    host: "youtube.com",
+    previewUrl: chosenFormat.url,
+    fileType: preferredFormat === "mp3" ? "audio" : "video",
+    mimeType: preferredFormat === "mp3" ? "audio/mpeg" : chosenFormat.mimeType || "video/mp4"
+  };
+}
+async function resolveVimeoSource(url, preferredFormat) {
+  var _a, _b, _c;
+  const videoIdMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (!(videoIdMatch == null ? void 0 : videoIdMatch[1])) {
+    throw new Error("Unable to resolve a Vimeo video ID from the provided URL.");
+  }
+  const response = await safeFetch(`https://player.vimeo.com/video/${videoIdMatch[1]}/config`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json, text/plain, */*"
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to fetch Vimeo metadata; server responded with ${response.status}.`);
+  }
+  const payload = await response.json();
+  const files = (_b = (_a = payload == null ? void 0 : payload.request) == null ? void 0 : _a.files) != null ? _b : {};
+  const progressive = Array.isArray(files.progressive) ? files.progressive : [];
+  const audioFiles = Array.isArray(files.audio) ? files.audio : [];
+  const bestVideo = [...progressive].sort((a, b) => {
+    var _a2, _b2;
+    return Number((_a2 = b.quality) == null ? void 0 : _a2.replace(/\D/g, "")) - Number((_b2 = a.quality) == null ? void 0 : _b2.replace(/\D/g, ""));
+  })[0];
+  const bestAudio = [...audioFiles].sort((a, b) => {
+    var _a2, _b2;
+    return Number((_a2 = b.quality) == null ? void 0 : _a2.replace(/\D/g, "")) - Number((_b2 = a.quality) == null ? void 0 : _b2.replace(/\D/g, ""));
+  })[0];
+  const selected = preferredFormat === "mp3" ? bestAudio != null ? bestAudio : bestVideo : bestVideo != null ? bestVideo : bestAudio;
+  if (!(selected == null ? void 0 : selected.url)) {
+    throw new Error("No Vimeo stream URL is available for the requested format.");
+  }
+  return {
+    resolvedUrl: selected.url,
+    title: ((_c = payload == null ? void 0 : payload.video) == null ? void 0 : _c.title) || "Vimeo media",
+    host: "vimeo.com",
+    previewUrl: selected.url,
+    fileType: preferredFormat === "mp3" || (selected == null ? void 0 : selected.type) === "audio" ? "audio" : "video",
+    mimeType: selected.type || (preferredFormat === "mp3" ? "audio/mpeg" : "video/mp4")
+  };
+}
+async function resolveMediaSource(url, preferredFormat = "auto") {
+  var _a, _b, _c, _d;
+  const validation = validateUrl(url);
+  if (!validation.valid || !validation.normalizedUrl) {
+    throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
+  }
+  const normalizedUrl = validation.normalizedUrl;
+  const host = (_c = (_b = validation.host) != null ? _b : getHostname(normalizedUrl)) != null ? _c : "unknown-host";
+  const lowerHost = host.toLowerCase();
+  if (lowerHost === "youtube.com" || lowerHost.endsWith(".youtube.com") || lowerHost === "youtu.be") {
+    return await resolveYouTubeSource(normalizedUrl, preferredFormat);
+  }
+  if (lowerHost === "vimeo.com" || lowerHost.endsWith(".vimeo.com")) {
+    return await resolveVimeoSource(normalizedUrl, preferredFormat);
+  }
+  const pageResponse = await safeFetch(normalizedUrl, {
+    method: "GET",
+    headers: {
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  });
+  if (!pageResponse.ok) {
+    return {
+      resolvedUrl: normalizedUrl,
+      title: "Remote media asset",
+      host,
+      previewUrl: normalizedUrl,
+      fileType: "video",
+      mimeType: "application/octet-stream"
+    };
+  }
+  const html = await pageResponse.text();
+  const title = findMetaTitle(html) || "Remote media asset";
+  const candidates = findMediaCandidates(html, normalizedUrl);
+  const previewUrl = (_d = candidates.find((candidate) => looksLikeMediaUrl(candidate))) != null ? _d : normalizedUrl;
+  return {
+    resolvedUrl: previewUrl,
+    title,
+    host,
+    previewUrl,
+    fileType: looksLikeMediaUrl(previewUrl) && /\.(mp3|m4a|aac|wav|ogg)$/i.test(previewUrl) ? "audio" : "video",
+    mimeType: mime.lookup(previewUrl) || "application/octet-stream"
+  };
+}
 function analyze_media(input) {
   var _a;
   const validation = validateUrl(input);
@@ -5659,36 +5817,39 @@ function analyze_media(input) {
   };
 }
 async function get_media_info(url) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d, _e;
   const validation = validateUrl(url);
   if (!validation.valid || !validation.normalizedUrl) {
     throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
   }
   const host = (_c = (_b = validation.host) != null ? _b : getHostname(validation.normalizedUrl)) != null ? _c : "unknown-host";
-  const finalUrl = validation.normalizedUrl;
+  const source = await resolveMediaSource(validation.normalizedUrl, "auto");
   return {
     status: "queued",
     progress: 0,
-    title: "Remote media asset",
+    title: source.title,
     host,
-    url: finalUrl,
-    fileType: "video",
-    mimeType: "application/octet-stream",
+    url: source.resolvedUrl,
+    fileType: (_d = source.fileType) != null ? _d : "video",
+    mimeType: (_e = source.mimeType) != null ? _e : "application/octet-stream",
     sizeBytes: 0,
     sizeLabel: "0 B",
     thumbnail: `https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80`,
-    fileName: `${host}-media.bin`,
+    fileName: `${host}-media.${source.fileType === "audio" ? "mp3" : "mp4"}`,
+    previewUrl: source.previewUrl,
     source: "metadata-service"
   };
 }
 async function download_authorized_media(url, options = {}) {
-  var _a, _b, _c, _d, _e;
-  const { maxBytes = 50 * 1024 * 1024, title = "Remote media asset" } = options;
+  var _a, _b, _c, _d, _e, _f, _g;
+  const { maxBytes = 50 * 1024 * 1024, title = "Remote media asset", format = "auto" } = options;
   const validation = validateUrl(url);
   if (!validation.valid || !validation.normalizedUrl) {
     throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
   }
-  const response = await safeFetch(validation.normalizedUrl, {
+  const source = await resolveMediaSource(validation.normalizedUrl, format);
+  const mediaUrl = source.resolvedUrl;
+  const response = await safeFetch(mediaUrl, {
     method: "GET",
     headers: {
       Accept: "*/*"
@@ -5697,7 +5858,7 @@ async function download_authorized_media(url, options = {}) {
   if (!response.ok) {
     throw new Error(`Unable to fetch remote media; server responded with ${response.status}.`);
   }
-  const contentType = (_b = response.headers.get("content-type")) != null ? _b : "application/octet-stream";
+  const contentType = (_c = (_b = response.headers.get("content-type")) != null ? _b : source.mimeType) != null ? _c : "application/octet-stream";
   const lengthHeader = response.headers.get("content-length");
   const buffer = Buffer.from(await response.arrayBuffer());
   if (lengthHeader) {
@@ -5708,25 +5869,32 @@ async function download_authorized_media(url, options = {}) {
   }
   assertSizeLimit(buffer.byteLength, maxBytes);
   const detectedType = await fileTypeFromBuffer(buffer);
-  const mimeType = (_c = detectedType == null ? void 0 : detectedType.mime) != null ? _c : mime.lookup(contentType) || contentType;
+  const mimeType = (_d = detectedType == null ? void 0 : detectedType.mime) != null ? _d : mime.lookup(contentType) || contentType;
   const extFromMime = mime.extension(mimeType) || "bin";
-  const extFromPath = path$1.extname(new URL(validation.normalizedUrl).pathname || "media.bin").replace(/^\./, "");
-  const extension = (_d = detectedType == null ? void 0 : detectedType.ext) != null ? _d : extFromPath || extFromMime;
+  const extFromPath = path$1.extname(new URL(mediaUrl).pathname || "media.bin").replace(/^\./, "");
+  let extension = (_e = detectedType == null ? void 0 : detectedType.ext) != null ? _e : extFromPath || extFromMime;
+  if (format === "mp3" && mimeType.startsWith("video/")) {
+    extension = "mp3";
+  }
+  if (format === "mp4" && mimeType.startsWith("audio/")) {
+    extension = "mp4";
+  }
   const tempPath = await writeTemporaryFile(buffer, extension, "download");
   await cleanupTemporaryFiles();
   const result = {
     status: "downloaded",
     progress: 100,
-    title,
-    host: (_e = validation.host) != null ? _e : "unknown-host",
-    url: validation.normalizedUrl,
-    fileType: mimeType.split("/")[0] || "media",
+    title: title || source.title,
+    host: (_f = validation.host) != null ? _f : "unknown-host",
+    url: mediaUrl,
+    fileType: (_g = source.fileType) != null ? _g : mimeType.split("/")[0] || "media",
     mimeType,
     sizeBytes: buffer.byteLength,
     sizeLabel: formatBytes(buffer.byteLength),
     thumbnail: `https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80`,
     fileName: path$1.basename(tempPath),
-    tempPath
+    tempPath,
+    previewUrl: source.previewUrl
   };
   await mediaQueue.enqueue("download_authorized_media", result);
   return result;
@@ -5796,6 +5964,7 @@ const _SxA8c9 = defineEventHandler(() => {});
 const _lazy_ALYvfn = () => import('../routes/api/analyze.post.mjs');
 const _lazy__8ToQM = () => import('../routes/api/media-info.post.mjs');
 const _lazy_wFL2RR = () => import('../routes/api/media/download.post.mjs');
+const _lazy_FbVw6o = () => import('../routes/api/media/file.get.mjs');
 const _lazy_g_xF7N = () => import('../routes/api/validate-url.post.mjs');
 const _lazy_3K2MZW = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
 
@@ -5805,6 +5974,7 @@ const handlers = [
   { route: '/api/analyze', handler: _lazy_ALYvfn, lazy: true, middleware: false, method: "post" },
   { route: '/api/media-info', handler: _lazy__8ToQM, lazy: true, middleware: false, method: "post" },
   { route: '/api/media/download', handler: _lazy_wFL2RR, lazy: true, middleware: false, method: "post" },
+  { route: '/api/media/file', handler: _lazy_FbVw6o, lazy: true, middleware: false, method: "get" },
   { route: '/api/validate-url', handler: _lazy_g_xF7N, lazy: true, middleware: false, method: "post" },
   { route: '/__nuxt_error', handler: _lazy_3K2MZW, lazy: true, middleware: false, method: undefined },
   { route: '/api/_nuxt_icon/:collection', handler: _aWSryn, lazy: false, middleware: false, method: undefined },
@@ -6225,5 +6395,5 @@ trapUnhandledNodeErrors();
 setupGracefulShutdown(listener, nitroApp);
 const nodeServer = {};
 
-export { $fetch$1 as $, withTrailingSlash as A, withoutTrailingSlash as B, sanitizeStatusCode as C, baseURL as D, defuFn as E, klona as F, defu as G, createHooks as H, isEqual as I, isEqual$1 as J, stringifyParsedURL as K, stringifyQuery as L, nodeServer as M, analyze_media as a, direct_media_download as b, createError$1 as c, defineEventHandler as d, buildAssetsURL as e, encodePath as f, get_media_info as g, defineRenderHandler as h, getQuery as i, getRouteRules as j, getResponseStatusText as k, getResponseStatus as l, useNitroApp as m, parseQuery as n, hasProtocol as o, publicAssetsURL as p, joinURL as q, readBody as r, serialize$1 as s, parseURL as t, useRuntimeConfig as u, validateUrl as v, decodePath as w, isScriptProtocol as x, withQuery as y, getContext as z };
+export { $fetch$1 as $, getContext as A, baseURL as B, createHooks as C, isEqual as D, stringifyParsedURL as E, stringifyQuery as F, parseQuery as G, defu as H, withTrailingSlash as I, withoutTrailingSlash as J, nodeServer as K, analyze_media as a, direct_media_download as b, createError$1 as c, defineEventHandler as d, getQuery as e, buildAssetsURL as f, get_media_info as g, encodePath as h, defineRenderHandler as i, getRouteRules as j, getResponseStatusText as k, getResponseStatus as l, useNitroApp as m, parseURL as n, decodePath as o, publicAssetsURL as p, klona as q, readBody as r, hasProtocol as s, isScriptProtocol as t, useRuntimeConfig as u, validateUrl as v, joinURL as w, withQuery as x, defuFn as y, sanitizeStatusCode as z };
 //# sourceMappingURL=nitro.mjs.map

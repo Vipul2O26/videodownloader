@@ -10,8 +10,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const format = body?.format === 'mp3' || body?.format === 'mp4' ? body.format : 'auto'
+
     const result = await direct_media_download(rawUrl, {
-      title: typeof body?.title === 'string' ? body.title : 'Remote media asset'
+      title: typeof body?.title === 'string' ? body.title : 'Remote media asset',
+      format
     })
 
     return result

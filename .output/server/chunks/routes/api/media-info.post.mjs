@@ -1,6 +1,7 @@
 import { d as defineEventHandler, r as readBody, c as createError, g as get_media_info } from '../../nitro/nitro.mjs';
 import 'node:path';
 import 'mime-types';
+import '@distube/ytdl-core';
 import 'file-type';
 import 'node:fs';
 import 'uuid';

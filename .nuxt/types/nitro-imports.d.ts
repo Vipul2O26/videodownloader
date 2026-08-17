@@ -150,7 +150,7 @@ declare global {
   export type { EventHandler, EventHandlerRequest, EventHandlerResponse, EventHandlerObject, H3EventContext } from '../../node_modules/h3'
   import('../../node_modules/h3')
   // @ts-ignore
-  export type { MediaDownloadResult } from '../../server/utils/media'
+  export type { PreferredFormat, MediaDownloadResult } from '../../server/utils/media'
   import('../../server/utils/media')
   // @ts-ignore
   export type { BackgroundQueue, QueueJob } from '../../server/utils/queue'

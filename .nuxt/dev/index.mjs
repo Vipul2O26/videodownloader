@@ -4,10 +4,12 @@ import { Server } from 'node:http';
 import path, { resolve, join, dirname } from 'node:path';
 import crypto$1 from 'node:crypto';
 import { parentPort, threadId } from 'node:worker_threads';
-import { escapeHtml } from 'file:///workspaces/videodownloader/node_modules/@vue/shared/dist/shared.cjs.js';
+import { escapeHtml as escapeHtml$1 } from 'file:///workspaces/videodownloader/node_modules/@vue/shared/dist/shared.cjs.js';
 import viteNodeEntry_mjs from 'file:///workspaces/videodownloader/node_modules/@nuxt/vite-builder/dist/vite-node-entry.mjs';
 import { viteNodeFetch } from 'file:///workspaces/videodownloader/node_modules/@nuxt/vite-builder/dist/vite-node.mjs';
+import { mkdir, writeFile, rename, unlink, readFile } from 'node:fs/promises';
 import mime from 'file:///workspaces/videodownloader/node_modules/mime-types/index.js';
+import ytdl from 'file:///workspaces/videodownloader/node_modules/@distube/ytdl-core/lib/index.js';
 import { fileTypeFromBuffer } from 'file:///workspaces/videodownloader/node_modules/file-type/index.js';
 import { promises } from 'node:fs';
 import { v4 } from 'file:///workspaces/videodownloader/node_modules/uuid/dist/esm/index.js';
@@ -20,7 +22,6 @@ import { createFetch, Headers as Headers$1 } from 'file:///workspaces/videodownl
 import { fetchNodeRequestHandler, callNodeRequestHandler } from 'file:///workspaces/videodownloader/node_modules/node-mock-http/dist/index.mjs';
 import { createStorage, prefixStorage } from 'file:///workspaces/videodownloader/node_modules/unstorage/dist/index.mjs';
 import unstorage_47drivers_47fs from 'file:///workspaces/videodownloader/node_modules/unstorage/drivers/fs.mjs';
-import { mkdir, writeFile, rename, unlink, readFile } from 'node:fs/promises';
 import fsDriver from 'file:///workspaces/videodownloader/node_modules/unstorage/drivers/fs-lite.mjs';
 import lruCache from 'file:///workspaces/videodownloader/node_modules/unstorage/drivers/lru-cache.mjs';
 import { digest, hash as hash$1 } from 'file:///workspaces/videodownloader/node_modules/ohash/dist/index.mjs';
@@ -2841,6 +2842,161 @@ class BackgroundQueue {
 }
 const mediaQueue = new BackgroundQueue();
 
+function escapeHtml(value) {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function normalizeMediaUrl(candidate, baseUrl) {
+  const cleaned = candidate.replace(/\\/g, "").replace(/&amp;/g, "&");
+  try {
+    const url = new URL(cleaned, baseUrl);
+    if (["http:", "https:"].includes(url.protocol)) {
+      return url.toString();
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+function findMediaCandidates(html, baseUrl) {
+  const candidates = /* @__PURE__ */ new Set();
+  const patterns = [
+    /(?:property|name)=["']og:video(?:\s*:url)?["'][^>]*content=["']([^"']+)["']/gi,
+    /(?:property|name)=["']twitter:player:stream["'][^>]*content=["']([^"']+)["']/gi,
+    /(?:property|name)=["']twitter:player["'][^>]*content=["']([^"']+)["']/gi,
+    /<video[^>]+src=["']([^"']+)["'][^>]*>/gi,
+    /<source[^>]+src=["']([^"']+)["'][^>]*>/gi,
+    /(?:src|data-src|data-url)=["']([^"']+\.(?:mp4|webm|m4v|m3u8|mpd)(?:\?[^"']*)?)["']/gi,
+    /"(?:url|src|stream)"\s*:\s*"([^"']+)"/gi
+  ];
+  for (const pattern of patterns) {
+    let match;
+    while ((match = pattern.exec(html)) !== null) {
+      const normalized = normalizeMediaUrl(match[1], baseUrl);
+      if (normalized) {
+        candidates.add(normalized);
+      }
+    }
+  }
+  return [...candidates];
+}
+function findMetaTitle(html) {
+  const patterns = [
+    /<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i,
+    /<meta[^>]+name=["']twitter:title["'][^>]+content=["']([^"']+)["']/i,
+    /<title[^>]*>([^<]+)<\/title>/i
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match == null ? void 0 : match[1]) {
+      return decodeURIComponent(escapeHtml(match[1]).replace(/&amp;/g, "&").replace(/&quot;/g, '"'));
+    }
+  }
+  return "Remote media asset";
+}
+function looksLikeMediaUrl(url) {
+  return /\.(mp4|m4a|m4v|mp3|webm|ogg|aac|wav|m3u8|mpd)(\?.*)?$/i.test(url);
+}
+async function resolveYouTubeSource(url, preferredFormat) {
+  var _a;
+  const info = await ytdl.getInfo(url);
+  const title = ((_a = info.videoDetails) == null ? void 0 : _a.title) || "YouTube media";
+  const chosenFormat = preferredFormat === "mp3" ? ytdl.chooseFormat(info.formats, { quality: "highestaudio", filter: "audioonly" }) : ytdl.chooseFormat(info.formats, { quality: "highest", filter: "audioandvideo" }) || ytdl.chooseFormat(info.formats, { quality: "highest" });
+  if (!(chosenFormat == null ? void 0 : chosenFormat.url)) {
+    throw new Error("No playable stream could be resolved from this YouTube URL.");
+  }
+  return {
+    resolvedUrl: chosenFormat.url,
+    title,
+    host: "youtube.com",
+    previewUrl: chosenFormat.url,
+    fileType: preferredFormat === "mp3" ? "audio" : "video",
+    mimeType: preferredFormat === "mp3" ? "audio/mpeg" : chosenFormat.mimeType || "video/mp4"
+  };
+}
+async function resolveVimeoSource(url, preferredFormat) {
+  var _a, _b, _c;
+  const videoIdMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (!(videoIdMatch == null ? void 0 : videoIdMatch[1])) {
+    throw new Error("Unable to resolve a Vimeo video ID from the provided URL.");
+  }
+  const response = await safeFetch(`https://player.vimeo.com/video/${videoIdMatch[1]}/config`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json, text/plain, */*"
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to fetch Vimeo metadata; server responded with ${response.status}.`);
+  }
+  const payload = await response.json();
+  const files = (_b = (_a = payload == null ? void 0 : payload.request) == null ? void 0 : _a.files) != null ? _b : {};
+  const progressive = Array.isArray(files.progressive) ? files.progressive : [];
+  const audioFiles = Array.isArray(files.audio) ? files.audio : [];
+  const bestVideo = [...progressive].sort((a, b) => {
+    var _a2, _b2;
+    return Number((_a2 = b.quality) == null ? void 0 : _a2.replace(/\D/g, "")) - Number((_b2 = a.quality) == null ? void 0 : _b2.replace(/\D/g, ""));
+  })[0];
+  const bestAudio = [...audioFiles].sort((a, b) => {
+    var _a2, _b2;
+    return Number((_a2 = b.quality) == null ? void 0 : _a2.replace(/\D/g, "")) - Number((_b2 = a.quality) == null ? void 0 : _b2.replace(/\D/g, ""));
+  })[0];
+  const selected = preferredFormat === "mp3" ? bestAudio != null ? bestAudio : bestVideo : bestVideo != null ? bestVideo : bestAudio;
+  if (!(selected == null ? void 0 : selected.url)) {
+    throw new Error("No Vimeo stream URL is available for the requested format.");
+  }
+  return {
+    resolvedUrl: selected.url,
+    title: ((_c = payload == null ? void 0 : payload.video) == null ? void 0 : _c.title) || "Vimeo media",
+    host: "vimeo.com",
+    previewUrl: selected.url,
+    fileType: preferredFormat === "mp3" || (selected == null ? void 0 : selected.type) === "audio" ? "audio" : "video",
+    mimeType: selected.type || (preferredFormat === "mp3" ? "audio/mpeg" : "video/mp4")
+  };
+}
+async function resolveMediaSource(url, preferredFormat = "auto") {
+  var _a, _b, _c, _d;
+  const validation = validateUrl(url);
+  if (!validation.valid || !validation.normalizedUrl) {
+    throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
+  }
+  const normalizedUrl = validation.normalizedUrl;
+  const host = (_c = (_b = validation.host) != null ? _b : getHostname(normalizedUrl)) != null ? _c : "unknown-host";
+  const lowerHost = host.toLowerCase();
+  if (lowerHost === "youtube.com" || lowerHost.endsWith(".youtube.com") || lowerHost === "youtu.be") {
+    return await resolveYouTubeSource(normalizedUrl, preferredFormat);
+  }
+  if (lowerHost === "vimeo.com" || lowerHost.endsWith(".vimeo.com")) {
+    return await resolveVimeoSource(normalizedUrl, preferredFormat);
+  }
+  const pageResponse = await safeFetch(normalizedUrl, {
+    method: "GET",
+    headers: {
+      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+    }
+  });
+  if (!pageResponse.ok) {
+    return {
+      resolvedUrl: normalizedUrl,
+      title: "Remote media asset",
+      host,
+      previewUrl: normalizedUrl,
+      fileType: "video",
+      mimeType: "application/octet-stream"
+    };
+  }
+  const html = await pageResponse.text();
+  const title = findMetaTitle(html) || "Remote media asset";
+  const candidates = findMediaCandidates(html, normalizedUrl);
+  const previewUrl = (_d = candidates.find((candidate) => looksLikeMediaUrl(candidate))) != null ? _d : normalizedUrl;
+  return {
+    resolvedUrl: previewUrl,
+    title,
+    host,
+    previewUrl,
+    fileType: looksLikeMediaUrl(previewUrl) && /\.(mp3|m4a|aac|wav|ogg)$/i.test(previewUrl) ? "audio" : "video",
+    mimeType: mime.lookup(previewUrl) || "application/octet-stream"
+  };
+}
 function analyze_media(input) {
   var _a;
   const validation = validateUrl(input);
@@ -2858,36 +3014,39 @@ function analyze_media(input) {
   };
 }
 async function get_media_info(url) {
-  var _a, _b, _c;
+  var _a, _b, _c, _d, _e;
   const validation = validateUrl(url);
   if (!validation.valid || !validation.normalizedUrl) {
     throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
   }
   const host = (_c = (_b = validation.host) != null ? _b : getHostname(validation.normalizedUrl)) != null ? _c : "unknown-host";
-  const finalUrl = validation.normalizedUrl;
+  const source = await resolveMediaSource(validation.normalizedUrl, "auto");
   return {
     status: "queued",
     progress: 0,
-    title: "Remote media asset",
+    title: source.title,
     host,
-    url: finalUrl,
-    fileType: "video",
-    mimeType: "application/octet-stream",
+    url: source.resolvedUrl,
+    fileType: (_d = source.fileType) != null ? _d : "video",
+    mimeType: (_e = source.mimeType) != null ? _e : "application/octet-stream",
     sizeBytes: 0,
     sizeLabel: "0 B",
     thumbnail: `https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&w=800&q=80`,
-    fileName: `${host}-media.bin`,
+    fileName: `${host}-media.${source.fileType === "audio" ? "mp3" : "mp4"}`,
+    previewUrl: source.previewUrl,
     source: "metadata-service"
   };
 }
 async function download_authorized_media(url, options = {}) {
-  var _a, _b, _c, _d, _e;
-  const { maxBytes = 50 * 1024 * 1024, title = "Remote media asset" } = options;
+  var _a, _b, _c, _d, _e, _f, _g;
+  const { maxBytes = 50 * 1024 * 1024, title = "Remote media asset", format = "auto" } = options;
   const validation = validateUrl(url);
   if (!validation.valid || !validation.normalizedUrl) {
     throw new Error((_a = validation.message) != null ? _a : "The URL is invalid.");
   }
-  const response = await safeFetch(validation.normalizedUrl, {
+  const source = await resolveMediaSource(validation.normalizedUrl, format);
+  const mediaUrl = source.resolvedUrl;
+  const response = await safeFetch(mediaUrl, {
     method: "GET",
     headers: {
       Accept: "*/*"
@@ -2896,7 +3055,7 @@ async function download_authorized_media(url, options = {}) {
   if (!response.ok) {
     throw new Error(`Unable to fetch remote media; server responded with ${response.status}.`);
   }
-  const contentType = (_b = response.headers.get("content-type")) != null ? _b : "application/octet-stream";
+  const contentType = (_c = (_b = response.headers.get("content-type")) != null ? _b : source.mimeType) != null ? _c : "application/octet-stream";
   const lengthHeader = response.headers.get("content-length");
   const buffer = Buffer.from(await response.arrayBuffer());
   if (lengthHeader) {
@@ -2907,25 +3066,32 @@ async function download_authorized_media(url, options = {}) {
   }
   assertSizeLimit(buffer.byteLength, maxBytes);
   const detectedType = await fileTypeFromBuffer(buffer);
-  const mimeType = (_c = detectedType == null ? void 0 : detectedType.mime) != null ? _c : mime.lookup(contentType) || contentType;
+  const mimeType = (_d = detectedType == null ? void 0 : detectedType.mime) != null ? _d : mime.lookup(contentType) || contentType;
   const extFromMime = mime.extension(mimeType) || "bin";
-  const extFromPath = path.extname(new URL(validation.normalizedUrl).pathname || "media.bin").replace(/^\./, "");
-  const extension = (_d = detectedType == null ? void 0 : detectedType.ext) != null ? _d : extFromPath || extFromMime;
+  const extFromPath = path.extname(new URL(mediaUrl).pathname || "media.bin").replace(/^\./, "");
+  let extension = (_e = detectedType == null ? void 0 : detectedType.ext) != null ? _e : extFromPath || extFromMime;
+  if (format === "mp3" && mimeType.startsWith("video/")) {
+    extension = "mp3";
+  }
+  if (format === "mp4" && mimeType.startsWith("audio/")) {
+    extension = "mp4";
+  }
   const tempPath = await writeTemporaryFile(buffer, extension, "download");
   await cleanupTemporaryFiles();
   const result = {
     status: "downloaded",
     progress: 100,
-    title,
-    host: (_e = validation.host) != null ? _e : "unknown-host",
-    url: validation.normalizedUrl,
-    fileType: mimeType.split("/")[0] || "media",
+    title: title || source.title,
+    host: (_f = validation.host) != null ? _f : "unknown-host",
+    url: mediaUrl,
+    fileType: (_g = source.fileType) != null ? _g : mimeType.split("/")[0] || "media",
     mimeType,
     sizeBytes: buffer.byteLength,
     sizeLabel: formatBytes(buffer.byteLength),
     thumbnail: `https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?auto=format&fit=crop&w=800&q=80`,
     fileName: path.basename(tempPath),
-    tempPath
+    tempPath,
+    previewUrl: source.previewUrl
   };
   await mediaQueue.enqueue("download_authorized_media", result);
   return result;
@@ -3552,6 +3718,7 @@ async function getIslandContext(event) {
 const _lazy_ALYvfn = () => Promise.resolve().then(function () { return analyze_post$1; });
 const _lazy__8ToQM = () => Promise.resolve().then(function () { return mediaInfo_post$1; });
 const _lazy_wFL2RR = () => Promise.resolve().then(function () { return download_post$1; });
+const _lazy_FbVw6o = () => Promise.resolve().then(function () { return file_get$1; });
 const _lazy_g_xF7N = () => Promise.resolve().then(function () { return validateUrl_post$1; });
 const _lazy_3K2MZW = () => Promise.resolve().then(function () { return renderer; });
 
@@ -3561,6 +3728,7 @@ const handlers = [
   { route: '/api/analyze', handler: _lazy_ALYvfn, lazy: true, middleware: false, method: "post" },
   { route: '/api/media-info', handler: _lazy__8ToQM, lazy: true, middleware: false, method: "post" },
   { route: '/api/media/download', handler: _lazy_wFL2RR, lazy: true, middleware: false, method: "post" },
+  { route: '/api/media/file', handler: _lazy_FbVw6o, lazy: true, middleware: false, method: "get" },
   { route: '/api/validate-url', handler: _lazy_g_xF7N, lazy: true, middleware: false, method: "post" },
   { route: '/__nuxt_error', handler: _lazy_3K2MZW, lazy: true, middleware: false, method: undefined },
   { route: '/api/_nuxt_icon/:collection', handler: _aWSryn, lazy: false, middleware: false, method: undefined },
@@ -3808,7 +3976,7 @@ const template$1 = (messages) => {
 		..._messages,
 		...messages
 	};
-	return "<!DOCTYPE html><html lang=\"en\"><head><title>" + escapeHtml(messages.status) + " - " + escapeHtml(messages.statusText) + " | " + escapeHtml(messages.appName) + "</title><meta charset=\"utf-8\"><meta content=\"width=device-width,initial-scale=1,minimum-scale=1\" name=\"viewport\"><style>.spotlight{background:linear-gradient(45deg,#00dc82,#36e4da 50%,#0047e1);filter:blur(20vh)}*,:after,:before{border-color:var(--un-default-border-color,#e5e7eb);border-style:solid;border-width:0;box-sizing:border-box}:after,:before{--un-content:\"\"}html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-moz-tab-size:4;tab-size:4;-webkit-tap-highlight-color:transparent}body{line-height:inherit;margin:0}h1{font-size:inherit;font-weight:inherit}h1,p{margin:0}*,:after,:before{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }.fixed{position:fixed}.-bottom-1\\/2{bottom:-50%}.left-0{left:0}.right-0{right:0}.grid{display:grid}.mb-16{margin-bottom:4rem}.mb-8{margin-bottom:2rem}.h-1\\/2{height:50%}.max-w-520px{max-width:520px}.min-h-screen{min-height:100vh}.place-content-center{place-content:center}.overflow-hidden{overflow:hidden}.bg-white{--un-bg-opacity:1;background-color:rgb(255 255 255/var(--un-bg-opacity))}.px-8{padding-left:2rem;padding-right:2rem}.text-center{text-align:center}.text-8xl{font-size:6rem;line-height:1}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-black{--un-text-opacity:1;color:rgb(0 0 0/var(--un-text-opacity))}.font-light{font-weight:300}.font-medium{font-weight:500}.leading-tight{line-height:1.25}.font-sans{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}@media(prefers-color-scheme:dark){.dark\\:bg-black{--un-bg-opacity:1;background-color:rgb(0 0 0/var(--un-bg-opacity))}.dark\\:text-white{--un-text-opacity:1;color:rgb(255 255 255/var(--un-text-opacity))}}@media(min-width:640px){.sm\\:px-0{padding-left:0;padding-right:0}.sm\\:text-4xl{font-size:2.25rem;line-height:2.5rem}}</style><script>!function(){const e=document.createElement(\"link\").relList;if(!(e&&e.supports&&e.supports(\"modulepreload\"))){for(const e of document.querySelectorAll('link[rel=\"modulepreload\"]'))r(e);new MutationObserver(e=>{for(const o of e)if(\"childList\"===o.type)for(const e of o.addedNodes)\"LINK\"===e.tagName&&\"modulepreload\"===e.rel&&r(e)}).observe(document,{childList:!0,subtree:!0})}function r(e){if(e.ep)return;e.ep=!0;const r=function(e){const r={};return e.integrity&&(r.integrity=e.integrity),e.referrerPolicy&&(r.referrerPolicy=e.referrerPolicy),\"use-credentials\"===e.crossOrigin?r.credentials=\"include\":\"anonymous\"===e.crossOrigin?r.credentials=\"omit\":r.credentials=\"same-origin\",r}(e);fetch(e.href,r)}}();<\/script></head><body class=\"antialiased bg-white dark:bg-black dark:text-white font-sans grid min-h-screen overflow-hidden place-content-center text-black\"><div class=\"-bottom-1/2 fixed h-1/2 left-0 right-0 spotlight\"></div><div class=\"max-w-520px text-center\"><h1 class=\"font-medium mb-8 sm:text-10xl text-8xl\">" + escapeHtml(messages.status) + "</h1><p class=\"font-light leading-tight mb-16 px-8 sm:px-0 sm:text-4xl text-xl\">" + escapeHtml(messages.description) + "</p></div></body></html>";
+	return "<!DOCTYPE html><html lang=\"en\"><head><title>" + escapeHtml$1(messages.status) + " - " + escapeHtml$1(messages.statusText) + " | " + escapeHtml$1(messages.appName) + "</title><meta charset=\"utf-8\"><meta content=\"width=device-width,initial-scale=1,minimum-scale=1\" name=\"viewport\"><style>.spotlight{background:linear-gradient(45deg,#00dc82,#36e4da 50%,#0047e1);filter:blur(20vh)}*,:after,:before{border-color:var(--un-default-border-color,#e5e7eb);border-style:solid;border-width:0;box-sizing:border-box}:after,:before{--un-content:\"\"}html{line-height:1.5;-webkit-text-size-adjust:100%;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-moz-tab-size:4;tab-size:4;-webkit-tap-highlight-color:transparent}body{line-height:inherit;margin:0}h1{font-size:inherit;font-weight:inherit}h1,p{margin:0}*,:after,:before{--un-rotate:0;--un-rotate-x:0;--un-rotate-y:0;--un-rotate-z:0;--un-scale-x:1;--un-scale-y:1;--un-scale-z:1;--un-skew-x:0;--un-skew-y:0;--un-translate-x:0;--un-translate-y:0;--un-translate-z:0;--un-pan-x: ;--un-pan-y: ;--un-pinch-zoom: ;--un-scroll-snap-strictness:proximity;--un-ordinal: ;--un-slashed-zero: ;--un-numeric-figure: ;--un-numeric-spacing: ;--un-numeric-fraction: ;--un-border-spacing-x:0;--un-border-spacing-y:0;--un-ring-offset-shadow:0 0 transparent;--un-ring-shadow:0 0 transparent;--un-shadow-inset: ;--un-shadow:0 0 transparent;--un-ring-inset: ;--un-ring-offset-width:0px;--un-ring-offset-color:#fff;--un-ring-width:0px;--un-ring-color:rgba(147,197,253,.5);--un-blur: ;--un-brightness: ;--un-contrast: ;--un-drop-shadow: ;--un-grayscale: ;--un-hue-rotate: ;--un-invert: ;--un-saturate: ;--un-sepia: ;--un-backdrop-blur: ;--un-backdrop-brightness: ;--un-backdrop-contrast: ;--un-backdrop-grayscale: ;--un-backdrop-hue-rotate: ;--un-backdrop-invert: ;--un-backdrop-opacity: ;--un-backdrop-saturate: ;--un-backdrop-sepia: }.fixed{position:fixed}.-bottom-1\\/2{bottom:-50%}.left-0{left:0}.right-0{right:0}.grid{display:grid}.mb-16{margin-bottom:4rem}.mb-8{margin-bottom:2rem}.h-1\\/2{height:50%}.max-w-520px{max-width:520px}.min-h-screen{min-height:100vh}.place-content-center{place-content:center}.overflow-hidden{overflow:hidden}.bg-white{--un-bg-opacity:1;background-color:rgb(255 255 255/var(--un-bg-opacity))}.px-8{padding-left:2rem;padding-right:2rem}.text-center{text-align:center}.text-8xl{font-size:6rem;line-height:1}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-black{--un-text-opacity:1;color:rgb(0 0 0/var(--un-text-opacity))}.font-light{font-weight:300}.font-medium{font-weight:500}.leading-tight{line-height:1.25}.font-sans{font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}@media(prefers-color-scheme:dark){.dark\\:bg-black{--un-bg-opacity:1;background-color:rgb(0 0 0/var(--un-bg-opacity))}.dark\\:text-white{--un-text-opacity:1;color:rgb(255 255 255/var(--un-text-opacity))}}@media(min-width:640px){.sm\\:px-0{padding-left:0;padding-right:0}.sm\\:text-4xl{font-size:2.25rem;line-height:2.5rem}}</style><script>!function(){const e=document.createElement(\"link\").relList;if(!(e&&e.supports&&e.supports(\"modulepreload\"))){for(const e of document.querySelectorAll('link[rel=\"modulepreload\"]'))r(e);new MutationObserver(e=>{for(const o of e)if(\"childList\"===o.type)for(const e of o.addedNodes)\"LINK\"===e.tagName&&\"modulepreload\"===e.rel&&r(e)}).observe(document,{childList:!0,subtree:!0})}function r(e){if(e.ep)return;e.ep=!0;const r=function(e){const r={};return e.integrity&&(r.integrity=e.integrity),e.referrerPolicy&&(r.referrerPolicy=e.referrerPolicy),\"use-credentials\"===e.crossOrigin?r.credentials=\"include\":\"anonymous\"===e.crossOrigin?r.credentials=\"omit\":r.credentials=\"same-origin\",r}(e);fetch(e.href,r)}}();<\/script></head><body class=\"antialiased bg-white dark:bg-black dark:text-white font-sans grid min-h-screen overflow-hidden place-content-center text-black\"><div class=\"-bottom-1/2 fixed h-1/2 left-0 right-0 spotlight\"></div><div class=\"max-w-520px text-center\"><h1 class=\"font-medium mb-8 sm:text-10xl text-8xl\">" + escapeHtml$1(messages.status) + "</h1><p class=\"font-light leading-tight mb-16 px-8 sm:px-0 sm:text-4xl text-xl\">" + escapeHtml$1(messages.description) + "</p></div></body></html>";
 };
 
 const error500 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
@@ -3891,8 +4059,10 @@ const download_post = defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: "A media URL is required." });
   }
   try {
+    const format = (body == null ? void 0 : body.format) === "mp3" || (body == null ? void 0 : body.format) === "mp4" ? body.format : "auto";
     const result = await direct_media_download(rawUrl, {
-      title: typeof (body == null ? void 0 : body.title) === "string" ? body.title : "Remote media asset"
+      title: typeof (body == null ? void 0 : body.title) === "string" ? body.title : "Remote media asset",
+      format
     });
     return result;
   } catch (error) {
@@ -3906,6 +4076,47 @@ const download_post = defineEventHandler(async (event) => {
 const download_post$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   __proto__: null,
   default: download_post
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const file_get = defineEventHandler(async (event) => {
+  const query = getQuery$1(event);
+  const rawUrl = typeof query.url === "string" ? query.url : "";
+  const format = query.format === "mp3" || query.format === "mp4" ? query.format : "auto";
+  if (!rawUrl) {
+    throw createError({ statusCode: 400, statusMessage: "A media URL is required." });
+  }
+  try {
+    const result = await direct_media_download(rawUrl, {
+      title: typeof query.title === "string" ? query.title : "media-download",
+      format
+    });
+    if (!result.tempPath) {
+      throw new Error("No temporary file was created for this media download.");
+    }
+    const fileBuffer = await readFile(result.tempPath);
+    const finalFileName = result.fileName.includes(".") ? result.fileName : `${result.fileName}.${result.fileType === "audio" ? "mp3" : "mp4"}`;
+    const safeFileName = finalFileName.replace(/['"]/g, "");
+    const encodedFileName = encodeURIComponent(safeFileName);
+    return new Response(fileBuffer, {
+      headers: {
+        "Content-Type": result.mimeType || "application/octet-stream",
+        "Content-Length": String(fileBuffer.length),
+        "Content-Disposition": `attachment; filename="${safeFileName}"; filename*=UTF-8''${encodedFileName}`,
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff"
+      }
+    });
+  } catch (error) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: error.message || "Unable to prepare the media download."
+    });
+  }
+});
+
+const file_get$1 = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: file_get
 }, Symbol.toStringTag, { value: 'Module' }));
 
 const validateUrl_post = defineEventHandler(async (event) => {
