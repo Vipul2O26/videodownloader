@@ -1,5 +1,5 @@
 import { readBody, setResponseStatus } from 'h3'
-import { extractMediaInfo, toPublicError } from '../utils/ytDlp'
+import { extractMediaInfo, toPublicError } from '../../utils/ytDlp'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
