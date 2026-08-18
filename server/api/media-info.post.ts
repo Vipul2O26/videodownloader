@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
     return { success: true, data }
   } catch (error) {
     const publicError = toPublicError(error)
-    setResponseStatus(event, publicError.statusCode, publicError.statusMessage)
+    setResponseStatus(event, publicError.statusCode)
     return publicError.body
   }
 })

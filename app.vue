@@ -83,23 +83,10 @@ const statusTone = computed(() => {
   return 'border-cyan-500/40 bg-cyan-500/10 text-cyan-200'
 })
 
-const friendlyMessages: Record<string, string> = {
-  YTDLP_NOT_FOUND: 'Server setup is incomplete: yt-dlp is not installed or is not executable. Install yt-dlp on the Nuxt server and try again.',
-  FFMPEG_NOT_FOUND: 'Server setup is incomplete: ffmpeg is not installed or is not executable. Install ffmpeg on the Nuxt server and try again.',
-  YOUTUBE_BOT_DETECTION: 'YouTube is requiring bot verification for this server request. This is usually caused by the server/Codespaces/cloud IP, not the Nuxt frontend.',
-  AUTHENTICATION_REQUIRED: 'This media requires authentication or cookies. Do not upload personal cookies to production.',
-  AGE_RESTRICTED: 'This media is age restricted and cannot be downloaded without proper authenticated access.',
-  VIDEO_UNAVAILABLE: 'This video is unavailable, private, removed, or blocked for this server.',
-  RATE_LIMITED: 'The media provider is rate limiting this server. Please wait and try again later.',
-  INVALID_URL: 'Please enter a valid supported media URL.',
-  TIMEOUT: 'The media operation timed out on the server. Try a smaller format or try again later.'
-}
-
 function friendlyError(error: any) {
   const payload = error?.data?.error || error?.error
-  const code = payload?.code || 'UNKNOWN_ERROR'
-  statusCode.value = code
-  statusMessage.value = friendlyMessages[code] || payload?.message || 'Unable to process this media URL.'
+  statusCode.value = payload?.code || 'UNKNOWN_ERROR'
+  statusMessage.value = payload?.message || 'Unable to process this media URL.'
 }
 
 async function fetchInfo() {

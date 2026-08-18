@@ -66,7 +66,6 @@ const FFMPEG_BIN = process.env.FFMPEG_PATH || 'ffmpeg'
 const DEFAULT_TIMEOUT_MS = Number(process.env.YTDLP_TIMEOUT_MS || 120_000)
 const DOWNLOAD_TIMEOUT_MS = Number(process.env.YTDLP_DOWNLOAD_TIMEOUT_MS || 300_000)
 const WORK_DIR = path.join(tmpdir(), 'videodownloader')
-const WORK_DIR_PREFIX = `${WORK_DIR}${path.sep}`
 
 function runProcess(command: string, args: string[], timeoutMs = DEFAULT_TIMEOUT_MS): Promise<ProcessResult> {
   return new Promise((resolve, reject) => {
@@ -189,7 +188,7 @@ export async function downloadMedia(rawUrl: string, formatId?: string): Promise<
 
   const match = [...result.stderr.matchAll(/\[download\] Destination: (.+)|\[Merger\] Merging formats into "(.+)"/g)].pop()
   const candidate = match?.[2] || match?.[1]
-  const filePath = candidate && path.resolve(candidate).startsWith(WORK_DIR_PREFIX) ? candidate : ''
+  const filePath = candidate && path.resolve(candidate).startsWith(WORK_DIR) ? candidate : ''
   if (!filePath) throw new MediaAppError('DOWNLOAD_FAILED', 'Unable to locate the downloaded file.', 500, result.stderr)
   await access(filePath, constants.R_OK)
   const stats = await stat(filePath)
@@ -205,29 +204,11 @@ export async function downloadMedia(rawUrl: string, formatId?: string): Promise<
 }
 
 export async function cleanupDownloadedFile(filePath: string) {
-  if (path.resolve(filePath).startsWith(WORK_DIR_PREFIX)) await unlink(filePath).catch(() => undefined)
-}
-
-const PUBLIC_STATUS_MESSAGES: Record<AppErrorCode, string> = {
-  INVALID_URL: 'Invalid media URL',
-  YTDLP_NOT_FOUND: 'Media service unavailable',
-  FFMPEG_NOT_FOUND: 'Media service unavailable',
-  YOUTUBE_BOT_DETECTION: 'Media provider verification required',
-  VIDEO_UNAVAILABLE: 'Media unavailable',
-  AUTHENTICATION_REQUIRED: 'Media authentication required',
-  AGE_RESTRICTED: 'Media authentication required',
-  RATE_LIMITED: 'Media provider rate limited',
-  DOWNLOAD_FAILED: 'Media processing failed',
-  TIMEOUT: 'Media processing timed out',
-  UNKNOWN_ERROR: 'Media processing failed'
+  if (path.resolve(filePath).startsWith(WORK_DIR)) await unlink(filePath).catch(() => undefined)
 }
 
 export function toPublicError(error: unknown) {
   const appError = error instanceof MediaAppError ? error : new MediaAppError('UNKNOWN_ERROR', 'An unexpected media error occurred.', 500)
   console.error('[media]', appError.code, appError.details || appError.message)
-  return {
-    statusCode: appError.statusCode,
-    statusMessage: PUBLIC_STATUS_MESSAGES[appError.code],
-    body: { success: false, error: { code: appError.code, message: appError.message } }
-  }
+  return { statusCode: appError.statusCode, body: { success: false, error: { code: appError.code, message: appError.message } } }
 }

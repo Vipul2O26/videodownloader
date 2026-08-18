@@ -9,12 +9,8 @@ export default defineEventHandler(async (event) => {
 
   try {
     const result = await downloadMedia(rawUrl, formatId)
-    let fileBuffer: Buffer
-    try {
-      fileBuffer = await readFile(result.filePath)
-    } finally {
-      await cleanupDownloadedFile(result.filePath)
-    }
+    const fileBuffer = await readFile(result.filePath)
+    await cleanupDownloadedFile(result.filePath)
     const encodedFileName = encodeURIComponent(result.fileName)
 
     return new Response(fileBuffer, {
@@ -28,7 +24,7 @@ export default defineEventHandler(async (event) => {
     })
   } catch (error) {
     const publicError = toPublicError(error)
-    setResponseStatus(event, publicError.statusCode, publicError.statusMessage)
+    setResponseStatus(event, publicError.statusCode)
     return publicError.body
   }
 })
