@@ -1,27 +1,34 @@
-import { readBody, createError } from 'h3'
-import { direct_media_download } from '../../utils/media'
+import { readBody, setResponseStatus } from 'h3'
+import { readFile } from 'node:fs/promises'
+import { cleanupDownloadedFile, downloadMedia, toPublicError } from '../../utils/ytDlp'
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event)
   const rawUrl = typeof body?.url === 'string' ? body.url : ''
-
-  if (!rawUrl) {
-    throw createError({ statusCode: 400, statusMessage: 'A media URL is required.' })
-  }
+  const formatId = typeof body?.formatId === 'string' ? body.formatId : undefined
 
   try {
-    const format = body?.format === 'mp3' || body?.format === 'mp4' ? body.format : 'auto'
+    const result = await downloadMedia(rawUrl, formatId)
+    let fileBuffer: Buffer
+    try {
+      fileBuffer = await readFile(result.filePath)
+    } finally {
+      await cleanupDownloadedFile(result.filePath)
+    }
+    const encodedFileName = encodeURIComponent(result.fileName)
 
-    const result = await direct_media_download(rawUrl, {
-      title: typeof body?.title === 'string' ? body.title : 'Remote media asset',
-      format
+    return new Response(fileBuffer, {
+      headers: {
+        'Content-Type': result.mimeType,
+        'Content-Length': String(result.sizeBytes),
+        'Content-Disposition': `attachment; filename="${result.fileName.replace(/["']/g, '')}"; filename*=UTF-8''${encodedFileName}`,
+        'Cache-Control': 'no-store',
+        'X-Content-Type-Options': 'nosniff'
+      }
     })
-
-    return result
-  } catch (error: any) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: error.message || 'Unable to download the remote media.'
-    })
+  } catch (error) {
+    const publicError = toPublicError(error)
+    setResponseStatus(event, publicError.statusCode, publicError.statusMessage)
+    return publicError.body
   }
 })
